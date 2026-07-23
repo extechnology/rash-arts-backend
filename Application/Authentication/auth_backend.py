@@ -12,10 +12,6 @@ from django.utils.translation import gettext_lazy as _
 from .auth_models import User
 
 
-# ---------------------------------------------------
-# User Creation Form
-# ---------------------------------------------------
-
 class UserCreationForm(forms.ModelForm):
     password1 = forms.CharField(
         label=_("Password"),

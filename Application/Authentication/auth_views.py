@@ -76,6 +76,27 @@ def delete_auth_cookies(response):
     response.delete_cookie("access_token", samesite=samesite)
     response.delete_cookie("refresh_token", samesite=samesite)
 
+def format_serializer_error(errors):
+    if isinstance(errors, dict):
+        for key, value in errors.items():
+            if key == "message":
+                if isinstance(value, list) and len(value) > 0:
+                    return str(value[0])
+                return str(value)
+            
+            if isinstance(value, list) and len(value) > 0:
+                first_err = str(value[0])
+            else:
+                first_err = str(value)
+            
+            if first_err.lower() == "this field is required.":
+                return f"{key}: This field is required."
+            return f"{key}: {first_err}"
+    elif isinstance(errors, list) and len(errors) > 0:
+        return str(errors[0])
+    return str(errors)
+
+
 class CheckUsernameView(APIView):
     permission_classes = [AllowAny]
     def get(self, request):
@@ -201,21 +222,7 @@ class VerifyOTPView(APIView):
 
             set_auth_cookies(response, refresh)
             return response
-        errors = serializer.errors
-        message = None
-
-        if isinstance(errors, dict):
-            for key, value in errors.items():
-                if isinstance(value, list) and len(value) > 0:
-                    message = value[0]
-                else:
-                    message = value
-                break
-        elif isinstance(errors, list):
-            message = errors[0]
-        else:
-            message = str(errors)
-
+        message = format_serializer_error(serializer.errors)
         return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -421,21 +428,7 @@ class VerifyResetPasswordOTPView(APIView):
             serializer.save()
             return Response({"message": "OTP verified successfully"}, status=status.HTTP_200_OK)
         else:
-            errors = serializer.errors
-            message = None
-
-            if isinstance(errors, dict):
-                for key, value in errors.items():
-                    if isinstance(value, list) and len(value) > 0:
-                        message = value[0]
-                    else:
-                        message = value
-                    break
-            elif isinstance(errors, list):
-                message = errors[0]
-            else:
-                message = str(errors)
-
+            message = format_serializer_error(serializer.errors)
             return Response({"message": message}, status=status.HTTP_400_BAD_REQUEST)
 
 
